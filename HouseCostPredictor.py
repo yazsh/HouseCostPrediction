@@ -3,11 +3,11 @@ import tensorflow as tf
 from HouseCostCleanData import *
 
 
-learning_rate = .1
+learning_rate = .01
 input_features = 288
-hidden1 = 20
-hidden2 = 40
-hidden3 = 60
+hidden1 = 25
+hidden2 = 25
+hidden3 = 25
 hidden4 = 1
 
 weights = dict(w1=tf.Variable(tf.random_normal([input_features, hidden1])),
@@ -26,26 +26,32 @@ y = tf.placeholder("float32",[None, 1], "y")
 
 layer = create_layer(x, biases['b1'], weights['w1'],tf.nn.relu);
 layer = create_layer(layer, biases['b2'], weights['w2'],tf.nn.relu);
+# layer = tf.nn.dropout(layer,.99)
 layer = create_layer(layer, biases['b3'], weights['w3'],tf.nn.relu);
-Z4 = create_layer(layer, biases['b4'], weights['w4']);
 
-cost = tf.losses.mean_squared_error(labels = y, predictions=Z4)
+Z4 = create_layer(layer, biases['b4'], weights['w4'], tf.nn.relu);
 
+# cost = tf.losses.mean_squared_error(labels = y, predictions=Z4)
+cost = tf.reduce_mean(tf.sqrt(tf.square(tf.losses.absolute_difference(y, Z4))))
 optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
 
-
+end = 600
 with tf.Session() as sess:
 
     sess.run(tf.global_variables_initializer())
-    for iteration in range(1, 500):
+    for iteration in range(1, end):
         _, c = sess.run([optimizer, cost], feed_dict={x: train_features, y: train_labels})
-        print("Iteration " + str(iteration) + " cost: " + str(c))
+        if iteration == (end - 1):
+            print("Iteration " + str(iteration) + " cost: " + str(c))
 
-    prediction = Z4
-    accuracy = tf.reduce_mean(tf.cast(tf.equal(Z4, y), "float"))
-    prediction = sess.run(prediction, feed_dict={x: train_features, y: train_labels})
-    print(np.append(prediction[:20], train_labels[:20],1))
-    print(accuracy.eval({x: train_features, y: train_labels}))
+    accuracy = tf.reduce_mean(tf.sqrt(tf.square(tf.losses.absolute_difference(y, Z4))))
+    prediction = sess.run(Z4, feed_dict={x: train_features, y: train_labels})
 
-    test_prediction = pd.DataFrame(prediction)
+    #dev prediction:
+    dev_accuracy = sess.run(accuracy, feed_dict={x: dev_features, y: dev_labels})
+    print(dev_accuracy)
+    #test prediction
+    test_prediction = sess.run(Z4, feed_dict={x: test_features, y:train_labels})
+    test_prediction = pd.DataFrame(test_prediction)
+    test_prediction.index += 1461
     test_prediction.to_csv("/Users/yazen/Desktop/datasets/HouseCostData/prediction.csv")
