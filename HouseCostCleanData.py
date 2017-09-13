@@ -4,7 +4,6 @@ import pandas as pd
 from sklearn import preprocessing
 from helperFunctions import *
 
-# test_features, test_labels = format_data("/Users/yazen/Desktop/datasets/HouseCostData/test.csv")
 train_features, train_labels = format_data("/Users/yazen/Desktop/datasets/HouseCostData/train.csv")
 
 
@@ -37,4 +36,4 @@ test_features_object = pd.get_dummies(test_features_object)
 
 test_features = pd.concat([test_features_object, test_features_numeric],1)
 
-test_features.head
+train_features.columns
